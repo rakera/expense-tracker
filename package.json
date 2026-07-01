@@ -1,0 +1,32 @@
+{
+  "name": "expense-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Expense Tracker monorepo (React + NestJS)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @expense-tracker/backend & npm run dev --workspace @expense-tracker/frontend",
+    "dev:frontend": "npm run dev --workspace @expense-tracker/frontend",
+    "dev:backend": "npm run start:dev --workspace @expense-tracker/backend",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,cjs,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,cjs,json,md}\"",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@expense-tracker/eslint-config": "*",
+    "@expense-tracker/tsconfig": "*",
+    "eslint": "^8.57.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4"
+  }
+}

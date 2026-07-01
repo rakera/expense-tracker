@@ -1,0 +1,39 @@
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
+  icon?: string;
+  userId: string;
+}
+
+export interface Expense {
+  id: string;
+  amount: number;
+  currency: string;
+  description: string;
+  date: string;
+  categoryId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
