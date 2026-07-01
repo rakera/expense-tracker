@@ -17,7 +17,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
+    "@expense-tracker/eslint-config": "*",
     "@expense-tracker/tsconfig": "*",
+    "eslint": "^8.57.0",
     "typescript": "^5.5.4"
   }
 }
