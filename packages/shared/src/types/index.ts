@@ -31,6 +31,11 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+export interface AuthResponse {
+  user: User;
+  tokens: AuthTokens;
+}
+
 export interface Paginated<T> {
   items: T[];
   total: number;
