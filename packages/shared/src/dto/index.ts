@@ -10,7 +10,7 @@ export type UpdateExpenseDto = Partial<CreateExpenseDto>;
 
 export interface CreateCategoryDto {
   name: string;
-  color: string;
+  color?: string;
   icon?: string;
 }
 
