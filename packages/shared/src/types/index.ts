@@ -26,6 +26,34 @@ export interface Expense {
   updatedAt: string;
 }
 
+export enum TransactionType {
+  Income = 'income',
+  Expense = 'expense',
+}
+
+export interface Transaction {
+  id: string;
+  amount: number;
+  type: TransactionType;
+  description: string;
+  date: string;
+  categoryId: string | null;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TransactionSummary {
+  income: number;
+  expense: number;
+  balance: number;
+}
+
+export interface TransactionList {
+  items: Transaction[];
+  summary: TransactionSummary;
+}
+
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;

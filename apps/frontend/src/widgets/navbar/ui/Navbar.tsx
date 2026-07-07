@@ -7,6 +7,7 @@ import { cn } from '@/shared/lib/cn';
 
 const links = [
   { to: ROUTES.home, label: 'Дашборд' },
+  { to: ROUTES.transactions, label: 'Транзакции' },
   { to: ROUTES.expenses, label: 'Расходы' },
   { to: ROUTES.categories, label: 'Категории' },
 ];
