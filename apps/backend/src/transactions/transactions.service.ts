@@ -6,7 +6,7 @@ import {
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, type FindOptionsWhere, Repository } from 'typeorm';
+import { Between, type FindOptionsWhere, Repository, type SelectQueryBuilder } from 'typeorm';
 
 import { GetUserByIdQuery } from '../users/queries/get-user-by-id.query';
 import { UserEntity } from '../users/user.entity';
@@ -33,25 +33,18 @@ export class TransactionsService {
   ) {}
 
   async findAll(userId: string, query: QueryTransactionsDto): Promise<TransactionListResult> {
+    const range = this.buildDateRange(query.month, query.year);
     const where: FindOptionsWhere<TransactionEntity> = { userId };
 
     if (query.type) {
       where.type = query.type;
     }
-
-    const range = this.buildDateRange(query.month, query.year);
     if (range) {
       where.date = Between(range.start, range.end);
     }
 
     const order = { date: 'DESC', createdAt: 'DESC' } as const;
-
-    const summaryRows = await this.transactionsRepository.find({
-      where,
-      select: { amount: true, type: true },
-    });
-    const summary = this.summarize(summaryRows);
-    const total = summaryRows.length;
+    const { summary, total } = await this.computeAggregate(userId, query.type, range);
 
     const paginate = query.page !== undefined || query.pageSize !== undefined;
     if (!paginate) {
@@ -134,22 +127,42 @@ export class TransactionsService {
     return date.toISOString().slice(0, 10);
   }
 
-  private summarize(items: TransactionEntity[]): TransactionSummary {
-    const summary = items.reduce<TransactionSummary>(
-      (acc, item) => {
-        if (item.type === TransactionType.Income) {
-          acc.income += Number(item.amount);
-        } else {
-          acc.expense += Number(item.amount);
-        }
-        return acc;
-      },
-      { income: 0, expense: 0, balance: 0 },
-    );
+  private async computeAggregate(
+    userId: string,
+    type: TransactionType | undefined,
+    range: { start: string; end: string } | null,
+  ): Promise<{ summary: TransactionSummary; total: number }> {
+    const qb: SelectQueryBuilder<TransactionEntity> = this.transactionsRepository
+      .createQueryBuilder('t')
+      .select('COUNT(*)', 'total')
+      .addSelect(`SUM(CASE WHEN t.type = 'income' THEN t.amount ELSE 0 END)`, 'income')
+      .addSelect(`SUM(CASE WHEN t.type = 'expense' THEN t.amount ELSE 0 END)`, 'expense')
+      .where('t.userId = :userId', { userId });
 
-    summary.balance = Number((summary.income - summary.expense).toFixed(2));
-    summary.income = Number(summary.income.toFixed(2));
-    summary.expense = Number(summary.expense.toFixed(2));
-    return summary;
+    if (type) {
+      qb.andWhere('t.type = :type', { type });
+    }
+    if (range) {
+      qb.andWhere('t.date BETWEEN :start AND :end', { start: range.start, end: range.end });
+    }
+
+    const row = await qb.getRawOne<{
+      total: string;
+      income: string | null;
+      expense: string | null;
+    }>();
+
+    const income = Number(row?.income ?? 0);
+    const expense = Number(row?.expense ?? 0);
+    const total = Number(row?.total ?? 0);
+
+    return {
+      summary: {
+        income: Number(income.toFixed(2)),
+        expense: Number(expense.toFixed(2)),
+        balance: Number((income - expense).toFixed(2)),
+      },
+      total,
+    };
   }
 }

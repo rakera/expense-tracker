@@ -1,25 +1,12 @@
-import { TransactionType } from '@expense-tracker/shared';
-
-import { useTransactions } from '@/entities/transaction';
+import { formatAmount, TransactionRow, useTransactions } from '@/entities/transaction';
 import { CreateTransactionForm } from '@/features/transaction/create-transaction';
 import {
-  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
 } from '@/shared/ui';
-
-const numberFormat = new Intl.NumberFormat('ru-RU', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 2,
-});
-
-function formatAmount(value: number): string {
-  return numberFormat.format(value);
-}
 
 export function TransactionsPage() {
   const { transactions, summary, loading, create, remove } = useTransactions();
@@ -73,31 +60,11 @@ export function TransactionsPage() {
           ) : (
             <ul className="divide-y divide-border">
               {transactions.map((transaction) => (
-                <li key={transaction.id} className="flex items-center gap-4 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{transaction.description}</p>
-                    <p className="text-sm text-muted-foreground">{transaction.date}</p>
-                  </div>
-                  <span
-                    className={
-                      transaction.type === TransactionType.Income
-                        ? 'font-semibold text-emerald-600'
-                        : 'font-semibold text-destructive'
-                    }
-                  >
-                    {transaction.type === TransactionType.Income ? '+' : '−'}
-                    {formatAmount(transaction.amount)}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      void remove(transaction.id);
-                    }}
-                  >
-                    Удалить
-                  </Button>
-                </li>
+                <TransactionRow
+                  key={transaction.id}
+                  transaction={transaction}
+                  onRemove={(id) => void remove(id)}
+                />
               ))}
             </ul>
           )}
