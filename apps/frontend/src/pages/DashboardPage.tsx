@@ -1,8 +1,0 @@
-export function DashboardPage() {
-  return (
-    <section>
-      <h1 className="text-2xl font-bold">Дашборд</h1>
-      <p className="mt-2 text-gray-600">Обзор расходов появится здесь.</p>
-    </section>
-  );
-}
