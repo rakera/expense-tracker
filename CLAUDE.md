@@ -6,7 +6,7 @@ Guidance for AI agents (and humans) working in this repository.
 
 Expense Tracker — a monorepo for a personal expense-tracking application.
 
-- Frontend: Vite + React 18 + TypeScript + Tailwind CSS + React Router v6
+- Frontend: Vite + React 18 + TypeScript + Tailwind CSS + React Router v6 + shadcn/ui, organised with Feature-Sliced Design (see [Frontend architecture](#frontend-architecture-feature-sliced-design))
 - Backend: NestJS + TypeScript + TypeORM + PostgreSQL
 - Shared code: `packages/shared` (types, DTOs, constants) consumed by both apps
 - Tooling: ESLint + Prettier, Docker Compose
@@ -19,17 +19,15 @@ Status: early-stage skeleton, but runnable. Dependencies are installed (`node_mo
 ```text
 expense-tracker/
 ├── apps/
-│   ├── frontend/            # Vite + React + TS + Tailwind SPA
-│   │   └── src/
-│   │       ├── app/         # AppLayout and app-level composition
-│   │       ├── components/  # Reusable UI (e.g. Navbar)
-│   │       ├── pages/       # Route pages (Dashboard, Expenses, Categories, Login, NotFound)
-│   │       ├── router/      # React Router config + route paths
-│   │       ├── hooks/       # React hooks (e.g. useExpenses)
-│   │       ├── services/    # API service layer
-│   │       ├── store/       # Client state
-│   │       ├── lib/         # apiClient and utilities
-│   │       └── types/       # Frontend-only types
+│   ├── frontend/            # Vite + React + TS + Tailwind + shadcn/ui SPA (Feature-Sliced Design)
+│   │   ├── components.json  # shadcn/ui config (aliases → @/shared/ui, @/shared/lib/cn)
+│   │   └── src/             # FSD layers (top→bottom): app → pages → widgets → features → entities → shared
+│   │       ├── app/         # App root, router, layouts/AppLayout, providers (route guards), global styles
+│   │       ├── pages/       # One slice per route (login, register, dashboard, expenses, categories, not-found)
+│   │       ├── widgets/     # Composite UI blocks (e.g. navbar)
+│   │       ├── features/    # User interactions (auth/login, auth/register, auth/logout)
+│   │       ├── entities/    # Business entities: session (auth store), expense (api + hooks)
+│   │       └── shared/      # Feature-agnostic: ui (shadcn), api (client), lib (cn, token-storage), config (routes)
 │   └── backend/             # NestJS API
 │       └── src/
 │           ├── auth/        # Auth module (controller/service)
@@ -107,8 +105,30 @@ npm run migration:revert --workspace @expense-tracker/backend
 - Cross-module interaction uses CQRS (`@nestjs/cqrs`), not direct imports: the `users` module registers the command/query handlers (`CreateUserCommand`, `GetUserByEmailQuery`, `GetUserByIdQuery`) and `auth` dispatches them through `CommandBus`/`QueryBus`. `AuthModule` does not import `UsersModule`/`UsersService`; the message classes under `users/commands` and `users/queries` are the only shared contract. Any module using the buses (and the ones owning handlers) must import `CqrsModule`. The `categories` module follows the same rule: `CategoriesService.create` verifies the owning user via the `QueryBus` (`GetUserByIdQuery`) instead of importing `UsersService`.
 - Categories: full CRUD under `/categories`, JWT-guarded, scoped to `@CurrentUser('userId')`. `CategoriesController` exposes `POST /`, `GET /`, `GET /:id`, `PATCH /:id`, `DELETE /:id` (204). `CategoriesService` owns the CRUD logic (`create`/`findAll`/`findOne`/`update`/`remove`); reads/updates/deletes are scoped on `{ id, userId }` (404 on miss). Request bodies validate through class-validator DTO classes in `categories/dto` (`CreateCategoryDto`, `UpdateCategoryDto`) — the global `ValidationPipe` only validates classes, not the shared interfaces, so DTOs live in the backend and `implements` the shared `@expense-tracker/shared` types. `color` is optional (entity default `#7c3aed`, validated with `@IsHexColor` when present).
 - Global API prefix comes from `API_PREFIX` in the shared package; a global `ValidationPipe`, exception filter, and logging interceptor are wired in `main.ts`.
-- Frontend routing: `src/router/index.tsx` uses `createBrowserRouter`; route constants live in `src/router/paths.ts`. `App.tsx` renders `AppLayout` with an `<Outlet />`.
 - Vite dev server proxies `/api` to `http://localhost:3000`.
+
+### Frontend architecture (Feature-Sliced Design)
+
+The frontend follows [Feature-Sliced Design](https://feature-sliced.design). Code is organised into **layers**; each layer is split into **slices** (business domains), and each slice into **segments** (`ui`, `model`, `api`, `lib`, `config`).
+
+Layers, highest to lowest (imports only ever point **downward**):
+
+- `app/` — application composition: `App` root, `router.tsx` (`createBrowserRouter`), `layouts/AppLayout` (renders `<Navbar />` + `<Outlet />`), `providers/` route guards (`RequireAuth`, `GuestOnly`), and global `styles/index.css`. `main.tsx` renders `<App />`.
+- `pages/` — one slice per route (`login`, `register`, `dashboard`, `expenses`, `categories`, `not-found`). Pages compose widgets/features/entities and hold no business logic.
+- `widgets/` — self-contained composite UI blocks (`navbar`).
+- `features/` — user interactions. Auth lives here: `features/auth/login`, `features/auth/register`, `features/auth/logout`. Each owns its `ui` (react-hook-form + zod form), `model/schema.ts` (zod schema), and `api/*.ts` (typed `apiClient` call).
+- `entities/` — business entities: `session` (zustand store persisting the user + writing tokens via `tokenStorage`; exposes `useSessionStore`, `useCurrentUser`, `useIsAuthenticated`) and `expense` (`api` + `useExpenses` hook).
+- `shared/` — feature-agnostic building blocks: `ui/` (shadcn/ui components + barrel), `api/` (auth-aware `apiClient` + `ApiError`), `lib/` (`cn`, `token-storage`), `config/` (`ROUTES`).
+
+Rules of thumb: a slice's public API is its `index.ts` barrel — import across slices via the barrel (`@/features/auth/login`), not deep paths. The `@` alias maps to `src` (tsconfig `paths` + Vite alias). Never import "upward" (e.g. `shared` must not import from `entities`; that's why `apiClient` reads the token from `tokenStorage` in `shared/lib`, which the `session` store writes to). Add new shadcn/ui components under `shared/ui`.
+
+### Frontend auth flow
+
+- shadcn/ui is set up manually for Tailwind v3: `components.json`, CSS variables + `@layer base` in `src/app/styles/index.css`, tokens wired in `tailwind.config.ts` (`tailwindcss-animate` plugin), `cn` helper in `shared/lib/cn.ts`. Components live in `shared/ui` (`button`, `input`, `label`, `card`, `form`). The `--primary`/`--ring` tokens track the violet `brand` color (`#7c3aed`).
+- `shared/api/client.ts` attaches `Authorization: Bearer <accessToken>` (read from `tokenStorage`) and throws a typed `ApiError` carrying the backend's `message` (parsed from the `AllExceptionsFilter` JSON body; joins array messages from `ValidationPipe`).
+- Login/registration call `POST /auth/login` and `POST /auth/register`, then `useSessionStore.setSession({ user, tokens })` persists the user (localStorage key `expense-tracker:session`) and stores tokens (`tokenStorage`), and navigate to `/`.
+- Routing: `GuestOnly` wraps `/login` + `/register` (redirects authenticated users to `/`); `RequireAuth` wraps `AppLayout` and its children (redirects anonymous users to `/login`). Route constants live in `shared/config/routes.ts`.
+- Client-side `AuthResponse` only: no `GET /auth/me` refresh-on-load or token-refresh flow yet (backend lacks those endpoints). Session is restored from localStorage on reload.
 
 ## Conventions
 
@@ -117,6 +137,7 @@ npm run migration:revert --workspace @expense-tracker/backend
 - Prettier: single quotes, semicolons, trailing commas (`all`), width 100.
 - Do not add narration-style comments; comment only non-obvious intent.
 - TypeORM entities are named `*.entity.ts` with `Entity` suffix classes; DB columns use snake_case via explicit `name`.
+- Frontend: follow Feature-Sliced Design — put code in the lowest layer that fits, expose each slice through its `index.ts` barrel, and import across slices via `@/<layer>/<slice>` (never deep paths or "upward" layers).
 
 ## Environment
 
