@@ -10,6 +10,7 @@ import { ExpensesPage } from '@/pages/expenses';
 import { LoginPage } from '@/pages/login';
 import { NotFoundPage } from '@/pages/not-found';
 import { RegisterPage } from '@/pages/register';
+import { TransactionsPage } from '@/pages/transactions';
 import { ROUTES } from '@/shared/config/routes';
 
 
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: ROUTES.home, element: <DashboardPage /> },
+          { path: ROUTES.transactions, element: <TransactionsPage /> },
           { path: ROUTES.expenses, element: <ExpensesPage /> },
           { path: ROUTES.categories, element: <CategoriesPage /> },
         ],
