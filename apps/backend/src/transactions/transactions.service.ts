@@ -1,4 +1,8 @@
-import { TransactionType, type TransactionSummary } from '@expense-tracker/shared';
+import {
+  DEFAULT_PAGE_SIZE,
+  TransactionType,
+  type TransactionSummary,
+} from '@expense-tracker/shared';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { QueryBus } from '@nestjs/cqrs';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,6 +19,9 @@ import { TransactionEntity } from './transaction.entity';
 export interface TransactionListResult {
   items: TransactionEntity[];
   summary: TransactionSummary;
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 @Injectable()
@@ -37,12 +44,31 @@ export class TransactionsService {
       where.date = Between(range.start, range.end);
     }
 
+    const order = { date: 'DESC', createdAt: 'DESC' } as const;
+
+    const summaryRows = await this.transactionsRepository.find({
+      where,
+      select: { amount: true, type: true },
+    });
+    const summary = this.summarize(summaryRows);
+    const total = summaryRows.length;
+
+    const paginate = query.page !== undefined || query.pageSize !== undefined;
+    if (!paginate) {
+      const items = await this.transactionsRepository.find({ where, order });
+      return { items, summary, total, page: 1, pageSize: total };
+    }
+
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? DEFAULT_PAGE_SIZE;
     const items = await this.transactionsRepository.find({
       where,
-      order: { date: 'DESC', createdAt: 'DESC' },
+      order,
+      take: pageSize,
+      skip: (page - 1) * pageSize,
     });
 
-    return { items, summary: this.summarize(items) };
+    return { items, summary, total, page, pageSize };
   }
 
   async findOne(userId: string, id: string): Promise<TransactionEntity> {

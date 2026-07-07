@@ -32,6 +32,8 @@ export interface QueryTransactionsDto {
   month?: number;
   year?: number;
   type?: TransactionType;
+  page?: number;
+  pageSize?: number;
 }
 
 export interface LoginDto {
