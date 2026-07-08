@@ -141,6 +141,19 @@ Rules of thumb: a slice's public API is its `index.ts` barrel — import across 
 - TypeORM entities are named `*.entity.ts` with `Entity` suffix classes; DB columns use snake_case via explicit `name`.
 - Frontend: follow Feature-Sliced Design — put code in the lowest layer that fits, expose each slice through its `index.ts` barrel, and import across slices via `@/<layer>/<slice>` (never deep paths or "upward" layers).
 
+### Git workflow
+
+Используй **GitHub Flow**: ветка разработки — `dev`; для новой фичи создавай ветку `feat_<название>` (название одним словом).
+
+**Conventional Commits** для сообщений коммитов:
+
+- Тип: `feat`, `fix`, `docs`, `refactor`, `test`, `ci`
+- Область (scope): модуль или область изменений
+- Описание на русском, кратко
+- Breaking changes помечай `!` перед двоеточием
+
+**Pull request**: перед созданием смотри `git diff dev`, чтобы написать информативное описание — что реализовано, какие endpoints добавлены. Title — по Conventional Commits.
+
 ## Environment
 
 Two `.env` files (both git-ignored):
