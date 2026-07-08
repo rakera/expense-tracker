@@ -19,6 +19,12 @@ function toQueryString(params: QueryTransactionsDto): string {
   if (params.type) {
     search.set('type', params.type);
   }
+  if (params.page) {
+    search.set('page', String(params.page));
+  }
+  if (params.pageSize) {
+    search.set('pageSize', String(params.pageSize));
+  }
   const query = search.toString();
   return query ? `?${query}` : '';
 }

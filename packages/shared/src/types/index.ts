@@ -52,6 +52,9 @@ export interface TransactionSummary {
 export interface TransactionList {
   items: Transaction[];
   summary: TransactionSummary;
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface AuthTokens {
