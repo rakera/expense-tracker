@@ -90,7 +90,11 @@ npm run <script> --workspace @expense-tracker/backend
 
 ## Git workflow
 
-Используй **GitHub Flow**: ветка разработки — `dev`; для новой фичи создавай ветку `feat_<название>` (название одним словом).
+**Работаем только в ветке `dev`.** Вся разработка и все коммиты идут напрямую в `dev` — не создавай feature-ветки и не переключайся на другие ветки без явной просьбы.
+
+**Ветку `main` не трогаем:** не переключаться на неё, не коммитить, не мержить в неё, не пушить в неё и не открывать в неё pull request. `main` обновляется только вручную владельцем репозитория.
+
+Любые git-операции (checkout, commit, push) выполняй только применительно к `dev`.
 
 <Important if="нужно написать commit">
 **Conventional Commits**
@@ -105,7 +109,7 @@ IMPORTANT: Использовать Conventional Commits (https://www.convention
 - Breaking changes помечай `!` перед двоеточием
 </important>
 
-**Pull request**: перед созданием смотри `git diff dev`, чтобы написать информативное описание — что реализовано, какие endpoints добавлены. Title — по Conventional Commits.
+Pull request'ы в `main` из-под агента не создаём — при необходимости их открывает владелец репозитория вручную.
 
 ## Environment
 
@@ -128,5 +132,5 @@ Frontend optional: `VITE_API_URL` (defaults to the shared `API_PREFIX`).
 - Local dev maps Postgres to host port **5433**, not 5432, because a local PostgreSQL already occupies 5432. This is set via `POSTGRES_PORT=5433` in the root `.env` (read by Docker Compose) and should be mirrored in `apps/backend/.env` (`POSTGRES_PORT` + `DATABASE_URL`). Note `apps/backend/.env.example` still ships `5432`, so adjust after copying it. If you free 5432, you can drop these overrides. Both `.env` files are git-ignored.
 - The backend depends on the shared package's build output at runtime; `dist/` must exist before `nest start`/`node dist/main.js`. The backend `prebuild` and `prestart:dev` scripts build shared for you, but if you run the compiled entry directly, build shared first.
 - On a fresh database, run the backend migrations before hitting the data endpoints (`synchronize` is off), otherwise they 500. See [`apps/backend/CLAUDE.md`](apps/backend/CLAUDE.md).
-- The active branch is `dev`, but `.github/workflows/ci.yml` only triggers on `main` (`push`/`pull_request`). CI does not run on `dev` pushes — merge to `main` (or open a PR against `main`) to exercise it.
+- The active branch is `dev`, and all agent work stays on `dev` (see Git workflow). `.github/workflows/ci.yml` only triggers on `main` (`push`/`pull_request`), so CI does not run on `dev` pushes — promoting `dev` to `main` is done manually by the repo owner, not from the agent.
 - `origin` points at `git@github-personal:rakera/expense-tracker.git`. The GitHub repo was originally misspelled `expence-tracker` and later renamed to `expense-tracker` (GitHub keeps a redirect from the old name); `origin` already uses the corrected URL.
