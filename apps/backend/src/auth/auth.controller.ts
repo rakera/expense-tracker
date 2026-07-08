@@ -1,5 +1,5 @@
-import type { LoginDto } from '@expense-tracker/shared';
-import { Body, Controller, Post } from '@nestjs/common';
+import type { AuthResponse, LoginDto, RegisterDto } from '@expense-tracker/shared';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 
 import { AuthService } from './auth.service';
 
@@ -7,8 +7,14 @@ import { AuthService } from './auth.service';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Post('register')
+  register(@Body() dto: RegisterDto): Promise<AuthResponse> {
+    return this.authService.register(dto);
+  }
+
   @Post('login')
-  login(@Body() dto: LoginDto) {
-    return this.authService.validateUser(dto);
+  @HttpCode(HttpStatus.OK)
+  login(@Body() dto: LoginDto): Promise<AuthResponse> {
+    return this.authService.login(dto);
   }
 }

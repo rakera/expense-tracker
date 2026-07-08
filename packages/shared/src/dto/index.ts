@@ -1,3 +1,5 @@
+import { TransactionType } from '../types/index.js';
+
 export interface CreateExpenseDto {
   amount: number;
   currency: string;
@@ -10,11 +12,29 @@ export type UpdateExpenseDto = Partial<CreateExpenseDto>;
 
 export interface CreateCategoryDto {
   name: string;
-  color: string;
+  color?: string;
   icon?: string;
 }
 
 export type UpdateCategoryDto = Partial<CreateCategoryDto>;
+
+export interface CreateTransactionDto {
+  amount: number;
+  type: TransactionType;
+  description: string;
+  date: string;
+  categoryId?: string | null;
+}
+
+export type UpdateTransactionDto = Partial<CreateTransactionDto>;
+
+export interface QueryTransactionsDto {
+  month?: number;
+  year?: number;
+  type?: TransactionType;
+  page?: number;
+  pageSize?: number;
+}
 
 export interface LoginDto {
   email: string;

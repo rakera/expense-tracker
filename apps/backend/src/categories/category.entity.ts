@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 
 import { ExpenseEntity } from '../expenses/expense.entity';
+import { TransactionEntity } from '../transactions/transaction.entity';
 import { UserEntity } from '../users/user.entity';
 
 @Entity('categories')
@@ -33,4 +34,7 @@ export class CategoryEntity {
 
   @OneToMany(() => ExpenseEntity, (expense) => expense.category)
   expenses!: ExpenseEntity[];
+
+  @OneToMany(() => TransactionEntity, (transaction) => transaction.category)
+  transactions!: TransactionEntity[];
 }

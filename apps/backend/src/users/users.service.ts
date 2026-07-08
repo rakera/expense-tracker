@@ -18,4 +18,9 @@ export class UsersService {
   findById(id: string): Promise<UserEntity | null> {
     return this.usersRepository.findOne({ where: { id } });
   }
+
+  create(data: Pick<UserEntity, 'email' | 'name' | 'passwordHash'>): Promise<UserEntity> {
+    const user = this.usersRepository.create(data);
+    return this.usersRepository.save(user);
+  }
 }

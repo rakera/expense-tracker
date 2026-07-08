@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { buildTypeOrmOptions } from './config/typeorm.config';
 import { ExpensesModule } from './expenses/expenses.module';
+import { TransactionsModule } from './transactions/transactions.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -18,6 +19,7 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     ExpensesModule,
     CategoriesModule,
+    TransactionsModule,
   ],
 })
 export class AppModule {}
